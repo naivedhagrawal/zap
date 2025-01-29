@@ -1,4 +1,4 @@
-FROM owasp/zap2docker-stable
+FROM zaproxy/zap-stable
 
 # Install zap-cli
 RUN apt-get update && \
