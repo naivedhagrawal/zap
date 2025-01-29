@@ -1,21 +1,9 @@
-FROM ubuntu:latest
+FROM owasp/zap2docker-stable
 
+# Install zap-cli
 RUN apt-get update && \
-    apt-get install -y wget unzip openjdk-11-jre-headless xvfb libxtst6 libxrender1 libxi6 tar
+    apt-get install -y python3-pip && \
+    pip3 install zapcli
 
-WORKDIR /opt
-
-ARG ZAP_VERSION=2.16.0  # Or your desired version
-ARG ZAP_FILE=ZAP_${ZAP_VERSION}_Linux.tar.gz
-
-RUN wget "https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/${ZAP_FILE}" && \
-    tar -xzf ${ZAP_FILE} && \
-    rm ${ZAP_FILE}  # Correctly placed inside a RUN instruction
-
-RUN useradd -ms /bin/bash zapuser
-RUN Xvfb :1 -screen 0 1024x768x24 &
-ENV DISPLAY=:1
-USER zapuser
-EXPOSE 8080
-
-CMD ["/opt/zaproxy-${ZAP_VERSION}/zap.sh", "-daemon", "-port", "8080", "-config", "api.key=","-gui"]
+# Run zap in daemon mode
+ENTRYPOINT ["zap.sh", "-daemon", "-host", "0.0.0.0", "-port", "8080"]
