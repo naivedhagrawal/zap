@@ -1,4 +1,4 @@
-FROM python:3.9  # Avoid slim variant
+FROM python:3.9
 
 # Install dependencies
 RUN apt-get update && \
