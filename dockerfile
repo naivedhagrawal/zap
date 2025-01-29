@@ -2,14 +2,14 @@ FROM debian:bookworm-slim
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-11-jre \
+    openjdk-17-jre \
     wget \
     xvfb \
-    x11-xserver-utils \
+    x11-utils \
     libxtst6 \
     libxi6 \
     libxrender1 \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /opt/zap
