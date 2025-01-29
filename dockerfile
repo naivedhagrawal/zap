@@ -1,12 +1,11 @@
-FROM ubuntu:latest
+FROM debian:bookworm-slim
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
-    openjdk-11-jdk \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-11-jre \
     wget \
     xvfb \
     x11-xserver-utils \
-    xdg-utils \
     libxtst6 \
     libxi6 \
     libxrender1 \
@@ -16,12 +15,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /opt/zap
 
 # Download and install OWASP ZAP
-RUN wget https://github.com/zaproxy/zaproxy/releases/download/v2.14.0/ZAP_2_14_0_unix.sh -O zap.sh \
+RUN wget -q https://github.com/zaproxy/zaproxy/releases/download/v2.14.0/ZAP_2_14_0_unix.sh -O zap.sh \
     && chmod +x zap.sh \
-    && ./zap.sh -q -dir /opt/zap
+    && ./zap.sh -q -dir /opt/zap \
+    && rm zap.sh  # Remove installer to save space
 
 # Expose ZAP GUI using X11
 ENV DISPLAY=:0
 
 # Entry point
-CMD ["bash", "-c", "/opt/zap/ZAP_2.14.0/zap.sh"]
+CMD ["/opt/zap/ZAP_2.14.0/zap.sh"]
