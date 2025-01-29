@@ -1,7 +1,7 @@
-FROM zaproxy/zap-stable
+FROM python:3.9-slim
 
-# Ensure package list is updated and install Python3 + pip
-RUN apt-get update && apt-get install -y python3 python3-pip --no-install-recommends && \
+# Install OWASP ZAP
+RUN apt-get update && apt-get install -y zaproxy && \
     python3 -m pip install --no-cache-dir zapcli && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
