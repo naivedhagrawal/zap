@@ -7,7 +7,7 @@ RUN apt-get update && \
 # Download and install OWASP ZAP
 WORKDIR /opt
 
-RUN wget https://github.com/zaproxy/zaproxy/releases/download/v2.13.0/ZAP_2.13.0_Linux.zip && \
+RUN wget https://github.com/zaproxy/zaproxy/releases/download/w2025-01-28/ZAP_WEEKLY_D-2025-01-28.zip && \
     unzip ZAP_2.13.0_Linux.zip && \
     rm ZAP_2.13.0_Linux.zip
 
