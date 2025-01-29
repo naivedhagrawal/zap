@@ -5,12 +5,12 @@ RUN apt-get update && \
 
 WORKDIR /opt
 
-ARG ZAP_VERSION=2.16.0
-ARG ZAP_FILE=ZAP_${ZAP_VERSION}_Linux.tar.gz  # Changed to tar.gz
+ARG ZAP_VERSION=2.16.0  # Or your desired version
+ARG ZAP_FILE=ZAP_${ZAP_VERSION}_Linux.tar.gz
 
 RUN wget "https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/${ZAP_FILE}" && \
-    tar -xzf ${ZAP_FILE} && \  # Use tar to extract
-    rm ${ZAP_FILE}
+    tar -xzf ${ZAP_FILE} && \
+    rm ${ZAP_FILE}  # Correctly placed inside a RUN instruction
 
 RUN useradd -ms /bin/bash zapuser
 RUN Xvfb :1 -screen 0 1024x768x24 &
@@ -18,5 +18,4 @@ ENV DISPLAY=:1
 USER zapuser
 EXPOSE 8080
 
-# Correct the path to zap.sh
 CMD ["/opt/zaproxy-${ZAP_VERSION}/zap.sh", "-daemon", "-port", "8080", "-config", "api.key=","-gui"]
