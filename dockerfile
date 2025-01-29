@@ -1,7 +1,8 @@
-FROM python:3.9-slim
+FROM python:3.9  # Avoid slim variant
 
 # Install dependencies
-RUN apt-get update && apt-get install -y wget openjdk-11-jre unzip && \
+RUN apt-get update && \
+    apt-get install -y wget openjdk-11-jre unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
