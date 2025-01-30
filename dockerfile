@@ -15,10 +15,11 @@ RUN mkdir -p /zap/wrk && \
 RUN chown -R zap:zap /home/zap/ && \
     chmod -R 777 /home/zap/
 
-# Install dependencies for Newman
+# Install dependencies for Newman and ZAP CLI
 RUN apt-get update && \
-    apt-get install -y nodejs npm && \
+    apt-get install -y nodejs npm python3 python3-pip && \
     npm install -g newman && \
+    pip3 install zapcli && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
