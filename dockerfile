@@ -3,7 +3,7 @@ FROM zaproxy/zap-stable:latest
 # Set working directory
 WORKDIR /zap
 
-# Set the user
+# Set the user to root for installations
 USER root
 
 # Ensure ZAP user has correct permissions
@@ -14,6 +14,13 @@ RUN mkdir -p /zap/wrk && \
 # Ensure ZAP user has correct permissions
 RUN chown -R zap:zap /home/zap/ && \
     chmod -R 777 /home/zap/
+
+# Install dependencies for Newman
+RUN apt-get update && \
+    apt-get install -y nodejs npm && \
+    npm install -g newman && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Switch back to zap user
 USER zap
