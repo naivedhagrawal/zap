@@ -15,16 +15,19 @@ RUN mkdir -p /zap/wrk && \
 RUN chown -R zap:zap /home/zap/ && \
     chmod -R 777 /home/zap/
 
-# Fix for package installation issues
+# Install dependencies for Newman & Python
 RUN apt-get clean && \
     apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates gnupg && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs python3 python3-pip && \
+    apt-get install -y nodejs python3 python3-venv python3-pip && \
     npm install -g newman && \
-    pip3 install --no-cache-dir zapcli && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install zap-cli inside virtual environment
+RUN python3 -m venv /zap-venv && \
+    /zap-venv/bin/pip install --no-cache-dir zapcli
 
 # Switch back to zap user
 USER zap
@@ -32,6 +35,7 @@ USER zap
 # Define environment variables
 ENV ZAP_PATH=/zap/zap.sh
 ENV HOME=/home/zap/
+ENV PATH="/zap-venv/bin:$PATH"  # Add virtual environment to PATH
 
 # Expose the ZAP port
 EXPOSE 8080
