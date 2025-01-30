@@ -4,7 +4,6 @@ pipeline {
         kubernetes {
             yaml docker()
             showRawYaml false
-            idleMinutes 30
         }
     }
 
