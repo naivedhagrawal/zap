@@ -12,10 +12,17 @@ ENV HOME=/home/zap/
 
 # Install Node.js and Newman
 USER root
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
+
+# Install curl, Node.js, and Newman with error checking
+RUN apt-get update -y && \
+    apt-get install -y curl && \
+    echo "Curl installed successfully" && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    echo "Node.js setup script executed" && \
     apt-get install -y nodejs && \
-    npm install -g newman
+    echo "Node.js installed successfully" && \
+    npm install -g newman && \
+    echo "Newman installed successfully"
 
 # Change permissions of all folders to rwx
 RUN chmod -R 777 /zap && chmod -R 777 /home/zap
