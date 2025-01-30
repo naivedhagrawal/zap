@@ -1,4 +1,3 @@
-# Use the official OWASP ZAP Docker image
 FROM zaproxy/zap-stable:latest
 
 # Set working directory
@@ -13,8 +12,9 @@ ENV HOME=/home/zap/
 
 # Install Node.js and Newman
 USER root
-RUN apt-get update && \
-    apt-get install -y nodejs npm && \
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
+    apt-get install -y nodejs && \
     npm install -g newman
 
 # Change permissions of all folders to rwx
