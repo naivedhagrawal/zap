@@ -11,6 +11,11 @@ RUN mkdir -p /zap/wrk && \
     chown -R zap:zap /zap/wrk && \
     chmod -R 777 /zap/wrk
 
+# Ensure ZAP user has correct permissions
+RUN mkdir -p /home/zap/ && \
+    chown -R zap:zap /home/zap/ && \
+    chmod -R 777 /home/zap/
+
 # Switch back to zap user
 USER zap
 
