@@ -4,15 +4,19 @@ FROM zaproxy/zap-stable:latest
 WORKDIR /zap
 
 # Set the user
+USER root
+
+# Ensure ZAP user has correct permissions
+RUN mkdir -p /zap/wrk && \
+    chown -R zap:zap /zap/wrk && \
+    chmod -R 777 /zap/wrk
+
+# Switch back to zap user
 USER zap
 
 # Define environment variables
 ENV ZAP_PATH=/zap/zap.sh
 ENV HOME=/home/zap/
-
-# Change permissions of all folders to rwx
-USER root
-RUN chmod -R 777 /zap && chmod -R 777 /home/zap
 
 # Expose the ZAP port
 EXPOSE 8080
