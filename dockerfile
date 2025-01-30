@@ -1,23 +1,13 @@
-FROM python:3.9
+# Use the official OWASP ZAP Docker image
+FROM zaproxy/zap-stable:latest
 
-# Install dependencies
+# Install Node.js and Newman
 RUN apt-get update && \
-    apt-get install -y wget openjdk-11-jre unzip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y nodejs npm && \
+    npm install -g newman
 
-# Set working directory
-WORKDIR /opt/zap
-
-# Download OWASP ZAP
-RUN wget -q https://github.com/zaproxy/zaproxy/releases/latest/download/ZAP_2_13_0_Linux.tar.gz -O zap.tar.gz && \
-    tar -xzf zap.tar.gz --strip-components=1 && \
-    rm zap.tar.gz
-
-# Install zapcli
-RUN pip install --no-cache-dir zapcli
-
-# Expose ZAP default port
+# Expose the ZAP port
 EXPOSE 8080
 
-# Set default entrypoint
-ENTRYPOINT ["./zap.sh", "-daemon", "-host", "0.0.0.0", "-port", "8080"]
+# Entrypoint to start ZAP in daemon mode and run the Postman collection
+CMD ["sh", "-c", "zap.sh -daemon -host 0.0.0.0 -port 8080 & newman run /zap/your_postman_collection.json"]
