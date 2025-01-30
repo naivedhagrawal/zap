@@ -35,7 +35,7 @@ USER zap
 # Define environment variables
 ENV ZAP_PATH=/zap/zap.sh
 ENV HOME=/home/zap/
-ENV PATH="/zap-venv/bin:$PATH"  # Add virtual environment to PATH
+ENV PATH="/zap-venv/bin:$PATH"
 
 # Expose the ZAP port
 EXPOSE 8080
