@@ -7,7 +7,8 @@ WORKDIR /zap
 USER root
 
 # Ensure ZAP user has correct permissions
-RUN chown -R zap:zap /zap/wrk && \
+RUN mkdir -p /zap/wrk && \
+    chown -R zap:zap /zap/wrk && \
     chmod -R 777 /zap/wrk
 
 # Ensure ZAP user has correct permissions
