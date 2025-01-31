@@ -7,6 +7,7 @@ USER root
 RUN mkdir -p /zap/wrk && \
     chown -R zap:zap /zap/wrk && \
     chmod -R 777 /zap/wrk && \
+    echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -y acl && \
     setfacl -m u:jenkins:rwx /zap/wrk  # Use ACL without -d flag
