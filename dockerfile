@@ -112,10 +112,4 @@ COPY --link --chown=1000:1000 policies /home/zap/.ZAP/policies/
 COPY --link --chown=1000:1000 policies /root/.ZAP/policies/
 COPY --link --chown=1000:1000 scripts /home/zap/.ZAP_D/scripts/
 COPY --link --chown=1000:1000 .xinitrc /home/zap/
-COPY --link --chown=1000:1000 firefox /home/zap/.mozilla/firefox/
-
-RUN echo "zap2docker-stable" > /zap/container && \
-    chmod a+x /home/zap/.xinitrc
-
-# Health check for container
-HEALTHCHECK CMD curl --silent --output /dev/null --fail http://localhost:$ZAP_PORT/ || exit 1
+# COMMENTED OUT LINE: COPY --link --chown=1000:1000 firefox /home/zap/.mozilla/fire
