@@ -9,7 +9,9 @@ RUN mkdir -p /zap/wrk && \
     chmod -R 777 /zap/wrk && \
     apt-get update && \
     apt-get install -y acl && \
+    useradd -m jenkins && \
     setfacl -m u:jenkins:rwx /zap/wrk
+
 # Switch back to zap user
 USER zap
 
