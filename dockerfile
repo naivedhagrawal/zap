@@ -1,14 +1,10 @@
 # syntax=docker/dockerfile:1
-# This Dockerfile builds the ZAP stable release with Webswing support and includes zap-cli.
+# This Dockerfile builds the ZAP stable release
 
-# Builder stage: Fetch dependencies and download ZAP stable release
-FROM debian:bookworm-slim AS builder
+FROM --platform=linux/amd64 debian:bookworm-slim AS builder
 
-ARG TARGETPLATFORM
-
-# Ensure sources list is in place and modify for faster mirror
-RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
-    apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
+# Install dependencies and remove cache in one step
+RUN apt-get update && apt-get install -q -y --fix-missing \
     wget \
     curl \
     openjdk-17-jdk \
@@ -18,39 +14,39 @@ RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.lis
 
 WORKDIR /zap
 
-# Download and extract the latest stable release of ZAP
+# Download and expand the latest stable release
 RUN wget -qO- https://raw.githubusercontent.com/zaproxy/zap-admin/master/ZapVersions.xml | \
-    xmlstarlet sel -t -v //url | grep -i Linux | \
-    wget --content-disposition -i - -O - | tar zxv && \
-    mv ZAP*/* . && rm -R ZAP*
+    xmlstarlet sel -t -v //url | grep -i Linux | wget --content-disposition -i - -O - | \
+    tar zxv && \
+    mv ZAP*/* . && \
+    rm -R ZAP*
 
 # Update add-ons
 RUN ./zap.sh -cmd -silent -addonupdate
 
-# Copy add-ons to installation directory
-RUN cp /root/.ZAP/plugin/*.zap plugin/ || :
+# Copy plugins to installation directory
+RUN cp /root/.ZAP/plugin/*.zap plugin/ || : 
 
 # Setup Webswing
 ENV WEBSWING_VERSION=24.2.2
 RUN --mount=type=secret,id=webswing_url \
-    if [ -s /run/secrets/webswing_url ] ; \
-    then curl -s -L "$(cat /run/secrets/webswing_url)-${WEBSWING_VERSION}-distribution.zip" > webswing.zip; \
-    else curl -s -L "https://dev.webswing.org/files/public/webswing-examples-eval-${WEBSWING_VERSION}-distribution.zip" > webswing.zip; fi && \
+    if [ -s /run/secrets/webswing_url ]; then \
+        curl -s -L "$(cat /run/secrets/webswing_url)-${WEBSWING_VERSION}-distribution.zip" > webswing.zip; \
+    else \
+        curl -s -L "https://dev.webswing.org/files/public/webswing-examples-eval-${WEBSWING_VERSION}-distribution.zip" > webswing.zip; \
+    fi && \
     unzip webswing.zip && \
     rm webswing.zip && \
     mv webswing-* webswing && \
     rm -Rf webswing/apps/
 
-# Final stage: Setup the final image with necessary tools
 FROM debian:bookworm-slim AS final
 LABEL maintainer="psiinon@gmail.com"
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG TARGETPLATFORM
 
-# Ensure sources list is in place and modify for faster mirror
-RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
-    apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
+# Install necessary dependencies in a single layer
+RUN apt-get update && apt-get install -q -y --fix-missing \
     make \
     automake \
     autoconf \
@@ -71,54 +67,55 @@ RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.lis
     x11vnc && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies and zap-cli
+# Install Python packages
 RUN pip3 install --break-system-packages --no-cache-dir --upgrade \
-    awscli \
-    pip \
-    zaproxy \
-    pyyaml \
-    urllib3 \
-    zap-cli
+    awscli pip zaproxy pyyaml urllib3
 
-# Create user for running ZAP
+# Create zap user and setup environment
 RUN useradd -u 1000 -d /home/zap -m -s /bin/bash zap && \
     echo zap:zap | chpasswd && \
     mkdir /zap && chown zap:zap /zap
 
 WORKDIR /zap
 
-# Create /zap/wrk directory for working files
-RUN mkdir /zap/wrk
-
-# Change to the zap user for proper permissions
+# Switch to zap user for subsequent commands
 USER zap
 
-# Copy stable release and Webswing from the builder stage
-COPY --from=builder --chown=1000:1000 /zap /zap
-COPY --from=builder --chown=1000:1000 /zap/webswing /zap/webswing
+# Create the /zap/wrk directory and change ownership to zap
+RUN mkdir /zap/wrk && chown zap:zap /zap/wrk
 
-# Set environment variables
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-$TARGETPLATFORM
+# Create necessary directories
+RUN mkdir /home/zap/.vnc
+
+# Copy stable release and webswing files
+COPY --link --from=builder --chown=1000:1000 /zap . 
+COPY --link --from=builder --chown=1000:1000 /zap/webswing /zap/webswing
+
+# Set Java and ZAP environment variables
+ARG TARGETARCH
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-$TARGETARCH
 ENV PATH=$JAVA_HOME/bin:/zap/:$PATH
 ENV ZAP_PATH=/zap/zap.sh
+
+# Default port and containerized environment
 ENV ZAP_PORT=8080
 ENV IS_CONTAINERIZED=true
 ENV HOME=/home/zap/
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
-# Copy configuration and script files
-COPY --from=builder --chown=1000:1000 zap* CHANGELOG.md /zap/
-COPY --from=builder --chown=1000:1000 webswing.config /zap/webswing/
-COPY --from=builder --chown=1000:1000 webswing.properties /zap/webswing/
-COPY --from=builder --chown=1000:1000 policies /home/zap/.ZAP/policies/
-COPY --from=builder --chown=1000:1000 policies /root/.ZAP/policies/
-COPY --from=builder --chown=1000:1000 scripts /home/zap/.ZAP_D/scripts/
-COPY --from=builder --chown=1000:1000 .xinitrc /home/zap/
-COPY --from=builder --chown=1000:1000 firefox /home/zap/.mozilla/firefox/
+# Copy additional configuration and scripts
+COPY --link --chown=1000:1000 zap* CHANGELOG.md /zap/
+COPY --link --chown=1000:1000 webswing.config /zap/webswing/
+COPY --link --chown=1000:1000 webswing.properties /zap/webswing/
+COPY --link --chown=1000:1000 policies /home/zap/.ZAP/policies/
+COPY --link --chown=1000:1000 policies /root/.ZAP/policies/
+COPY --link --chown=1000:1000 scripts /home/zap/.ZAP_D/scripts/
+COPY --link --chown=1000:1000 .xinitrc /home/zap/
+COPY --link --chown=1000:1000 firefox /home/zap/.mozilla/firefox/
 
-# Create container label
-RUN echo "zap2docker-stable" > /zap/container && chmod a+x /home/zap/.xinitrc
+RUN echo "zap2docker-stable" > /zap/container && \
+    chmod a+x /home/zap/.xinitrc
 
-# Health check to ensure ZAP is running
+# Health check for container
 HEALTHCHECK CMD curl --silent --output /dev/null --fail http://localhost:$ZAP_PORT/ || exit 1
