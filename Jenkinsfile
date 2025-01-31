@@ -1,6 +1,6 @@
 @Library('k8s-shared-lib') _
 pipeline {
-    agent any
+    agent none
     environment {
         IMAGE_NAME = "owasp-zap"
         IMAGE_TAG = "latest"
