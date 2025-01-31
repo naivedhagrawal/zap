@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zaproxy-deployment
+  namespace: devops-tools  # Specify the namespace here
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zaproxy
+  template:
+    metadata:
+      labels:
+        app: zaproxy
+    spec:
+      containers:
+      - name: zaproxy
+        image: ghcr.io/zaproxy/zaproxy:weekly
+        command:
+          - "sh"
+          - "-c"
+          - "cd /zap && ./zap-webswing.sh && tail -f /dev/null"
+        ports:
+        - containerPort: 8080
+        - containerPort: 8090
+        securityContext:
+          runAsUser: 1000  # Assuming 'zap' user corresponds to UID 1001
+        stdin: true
+        tty: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zaproxy-service
+  namespace: devops-tools  # Specify the namespace here
+spec:
+  selector:
+    app: zaproxy
+  ports:
+    - name: http-8080
+      protocol: TCP
+      port: 9090
+      targetPort: 8080
+      nodePort: 31003
+    - name: http-8090  # Specify the NodePort for port 8080
+      protocol: TCP
+      port: 9000
+      targetPort: 8090
+      nodePort: 31002  # Specify the NodePort for port 8090
+  type: NodePort
