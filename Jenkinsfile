@@ -14,6 +14,17 @@ pipeline {
     }
 
     stages {
+        stage('Trivy Install') {
+            steps {
+                container('docker') {
+                    sh """
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+                    trivy --version
+                    """
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 container('docker') {
