@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1
-# This Dockerfile builds the ZAP stable release with Webswing support and includes zap-cli and newman
+# This Dockerfile builds the ZAP stable release with Webswing support and includes zap-cli.
 
 # Builder stage: Fetch dependencies and download ZAP stable release
-FROM --platform=linux/amd64 debian:bookworm-slim AS builder
+FROM debian:bookworm-slim AS builder
 
-RUN apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
+ARG TARGETPLATFORM
+
+RUN sed -i 's/deb.debian.org/mirror.math.princeton.edu/' /etc/apt/sources.list && \
+    apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
     wget \
     curl \
     openjdk-17-jdk \
@@ -42,8 +45,10 @@ FROM debian:bookworm-slim AS final
 LABEL maintainer="psiinon@gmail.com"
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETPLATFORM
 
-RUN apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
+RUN sed -i 's/deb.debian.org/mirror.math.princeton.edu/' /etc/apt/sources.list && \
+    apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
     make \
     automake \
     autoconf \
@@ -61,9 +66,7 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends --fix-missin
     python-is-python3 \
     firefox-esr \
     xvfb \
-    x11vnc \
-    nodejs \
-    npm && \
+    x11vnc && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies and zap-cli
@@ -74,9 +77,6 @@ RUN pip3 install --break-system-packages --no-cache-dir --upgrade \
     pyyaml \
     urllib3 \
     zap-cli
-
-# Install Newman (Postman CLI)
-RUN npm install -g newman
 
 # Create user for running ZAP
 RUN useradd -u 1000 -d /home/zap -m -s /bin/bash zap && \
@@ -96,8 +96,7 @@ COPY --from=builder --chown=1000:1000 /zap /zap
 COPY --from=builder --chown=1000:1000 /zap/webswing /zap/webswing
 
 # Set environment variables
-ARG TARGETARCH
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-$TARGETARCH
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-$TARGETPLATFORM
 ENV PATH=$JAVA_HOME/bin:/zap/:$PATH
 ENV ZAP_PATH=/zap/zap.sh
 ENV ZAP_PORT=8080
