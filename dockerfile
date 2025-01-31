@@ -6,7 +6,8 @@ FROM debian:bookworm-slim AS builder
 
 ARG TARGETPLATFORM
 
-RUN sed -i 's/deb.debian.org/mirror.math.princeton.edu/' /etc/apt/sources.list && \
+# Ensure sources list is in place and modify for faster mirror
+RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
     apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
     wget \
     curl \
@@ -47,7 +48,8 @@ LABEL maintainer="psiinon@gmail.com"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TARGETPLATFORM
 
-RUN sed -i 's/deb.debian.org/mirror.math.princeton.edu/' /etc/apt/sources.list && \
+# Ensure sources list is in place and modify for faster mirror
+RUN echo "deb http://deb.debian.org/debian bookworm main" > /etc/apt/sources.list && \
     apt-get update && apt-get install -q -y --no-install-recommends --fix-missing \
     make \
     automake \
