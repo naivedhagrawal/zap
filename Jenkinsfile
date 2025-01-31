@@ -30,7 +30,7 @@ pipeline {
                     """
                 }
             }
-        }.
+        }
 
 
         stage ('Trivy Scan') {
@@ -56,6 +56,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Push') {
             agent {
                 kubernetes {
