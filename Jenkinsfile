@@ -18,12 +18,12 @@ pipeline {
         stage ('Build Docker Image') {
             agent {
                 kubernetes {
-                    yaml docker()
+                    yaml docker('docker-build','docker:latest')
                     showRawYaml false
                 }
             }
             steps {
-                container('docker') {
+                container('docker-build') {
                     sh """
                         docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                         stash name: 'image', includes: '${IMAGE_NAME}:${IMAGE_TAG}'       
@@ -60,12 +60,12 @@ pipeline {
         stage('Push') {
             agent {
                 kubernetes {
-                    yaml docker()
+                    yaml docker('docker-push','docker:latest')
                     showRawYaml false
                 }
             }
             steps {
-                container('docker') {
+                container('docker-push') {
                     unstash 'image'
                     withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh '''
