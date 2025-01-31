@@ -1,11 +1,6 @@
 @Library('k8s-shared-lib') _
 pipeline {
-    agent {
-        kubernetes {
-            yaml docker()
-            showRawYaml false
-        }
-    }
+    agent any
     environment {
         IMAGE_NAME = "owasp-zap"
         IMAGE_TAG = "latest"
@@ -15,28 +10,29 @@ pipeline {
 
     stages {
         
-        stage ('Build Docker Image') {
+        stage('Build Docker Image') {
             agent {
                 kubernetes {
-                    yaml docker('docker-build','docker:latest')
+                    yaml docker('docker-build', 'docker:latest')
                     showRawYaml false
                 }
             }
             steps {
                 container('docker-build') {
-                    sh """
-                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                        stash name: 'image', includes: '${IMAGE_NAME}:${IMAGE_TAG}'       
-                    """
+                    script {
+                        echo "Building Docker image..."
+                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    }
                 }
+                // Stash the image outside the script block
+                stash name: 'image', includes: "${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
 
-
-        stage ('Trivy Scan') {
+        stage('Trivy Scan') {
             agent {
                 kubernetes {
-                    yaml pod('trivy','aquasec/trivy:latest')
+                    yaml pod('trivy', 'aquasec/trivy:latest')
                     showRawYaml false
                 }
             }
@@ -57,22 +53,25 @@ pipeline {
             }
         }
 
-        stage('Push') {
+        stage('Push Docker Image') {
             agent {
                 kubernetes {
-                    yaml docker('docker-push','docker:latest')
+                    yaml docker('docker-push', 'docker:latest')
                     showRawYaml false
                 }
             }
             steps {
                 container('docker-push') {
-                    unstash 'image'
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh '''
-                        echo $PASSWORD | docker login -u $USERNAME --password-stdin
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_HUB_REPO}:${IMAGE_TAG}
-                        docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
-                        '''
+                    script {
+                        unstash 'image'
+                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            echo "Logging into Docker Hub..."
+                            sh '''
+                                echo $PASSWORD | docker login -u $USERNAME --password-stdin
+                                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                                docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                            '''
+                        }
                     }
                 }
             }
