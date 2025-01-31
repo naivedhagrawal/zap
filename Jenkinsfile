@@ -18,6 +18,8 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
+                    sudo apt-get update -y || sudo yum update -y
+                    sudo apt-get install -y curl || sudo yum install -y curl
                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
                     trivy --version
                     """
