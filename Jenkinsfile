@@ -6,6 +6,12 @@ pipeline {
             showRawYaml false
         }
     }
+    environment {
+        IMAGE_NAME = "owasp-zap"
+        IMAGE_TAG = "latest"
+        DOCKER_HUB_REPO = "naivedh/owasp-zap"
+        DOCKER_CREDENTIALS = "docker_hub_up"
+    }
 
     stages {
         stage('Build Docker Image') {
@@ -13,20 +19,35 @@ pipeline {
                 container('docker') {
                     
                         sh """
-                        docker build -t owasp-zap:latest .
+                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                         """
                 }
             }
         }
-
+        stage('Trivy Scan') {
+            steps {
+                container('docker') {
+                    script {
+                        echo "Scanning image with Trivy..."
+                        def exitCode = sh(
+                            script: "trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}",
+                            returnStatus: true
+                        )
+                        if (exitCode != 0) {
+                            error "Vulnerabilities found! Fix them before pushing."
+                        }
+                    }
+                }
+            }
+        }
         stage('Push') {
             steps {
                 container('docker') {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_up', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh '''
                         echo $PASSWORD | docker login -u $USERNAME --password-stdin
-                        docker tag owasp-zap:latest naivedh/owasp-zap:latest
-                        docker push naivedh/owasp-zap:latest
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                        docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
                         '''
                     }
                 }
