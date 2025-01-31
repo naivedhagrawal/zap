@@ -8,10 +8,6 @@ RUN mkdir -p /zap/wrk && \
     chown -R zap:zap /zap/wrk && \
     chmod -R 777 /zap/wrk
 
-RUN mkdir -p /zap/data && \
-    touch /zap/data/zap-out.json && \
-    chmod 777 /zap/data/zap-out.json
-
 # Switch back to zap user
 USER zap
 
