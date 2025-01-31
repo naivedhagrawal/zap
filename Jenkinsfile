@@ -23,7 +23,7 @@ pipeline {
                 }
             }
             steps {
-                container {
+                container('docker') {
                     sh """
                         docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                         stash name: 'image', includes: '${IMAGE_NAME}:${IMAGE_TAG}'       
@@ -56,7 +56,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Push') {
             agent {
                 kubernetes {
